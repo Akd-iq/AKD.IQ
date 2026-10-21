@@ -1,4 +1,4 @@
-[22/10/2026 01:21 ص] احمد اياد: <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +9,6 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#080b18">
-    
     <!-- استدعاء مكتبات Firebase السحابية -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -74,7 +73,7 @@
         </div>
 
         <!-- 3. شاشة إدخال رمز OTP -->
-[22/10/2026 01:21 ص] احمد اياد: <div id="otp-section" style="display: none;">
+        <div id="otp-section" style="display: none;">
             <h2>تأكيد رمز التحقق</h2>
             <p>تم إرسال الرمز إلى بريدك الإلكتروني</p>
             <form onsubmit="verifyOTP(event)">
@@ -139,7 +138,7 @@
                 <button onclick="switchTab('pay-debts')"><i class="fa-solid fa-hand-holding-dollar"></i> 8- تسديد الديون</button>
                 <button onclick="switchTab('radio')"><i class="fa-solid fa-radio"></i> 9- راديو أكد</button>
                 <button onclick="switchTab('expenses')"><i class="fa-solid fa-receipt"></i> 10- المصروفات</button>
-[22/10/2026 01:21 ص] احمد اياد: <button onclick="switchTab('reports')"><i class="fa-solid fa-chart-pie"></i> 11- نهاية العمل (التقارير)</button>
+                <button onclick="switchTab('reports')"><i class="fa-solid fa-chart-pie"></i> 11- نهاية العمل (التقارير)</button>
                 
                 <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
                 
@@ -165,6 +164,7 @@
             </div>
             <div style="display: flex; gap: 10px; margin-top: 15px;">
                 <button type="button" onclick="confirmCheckoutAndPrintPDF()" class="btn-modal" style="flex:1;">طباعة وحفظ PDF</button>
+
                 <button type="button" onclick="closeCashierModal()" class="btn-modal" style="background: #64748b; flex:1;">إلغاء</button>
             </div>
         </div>
@@ -180,24 +180,22 @@
         </div>
     </div>
 
+    <script src="insh.js"></script>
     <!-- نافذة تسديد الديون المخصصة الأنيقة -->
-    <div id="pay-debt-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-box">
-            <div class="modal-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-            <h3>تسديد دفعة مالية</h3>
-            <p id="pay-debt-info">المبلغ المتبقي الأصلي: 0 د.ع</p>
-            <div class="input-group">
-                <label>أدخل مبلغ الدفعة المسددة (د.ع)</label>
-                <input type="number" id="pay-amount-input" placeholder="مثال: 50000" min="1">
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button type="button" onclick="confirmPayDebtorAmount()" class="btn-modal" style="flex:1;">تأكيد وطباعة الوصل</button>
-                <button type="button" onclick="closePayDebtModal()" class="btn-modal" style="background: #64748b; flex:1;">إلغاء</button>
-            </div>
+<div id="pay-debt-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+        <div class="modal-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+        <h3>تسديد دفعة مالية</h3>
+        <p id="pay-debt-info">المبلغ المتبقي الأصلي: 0 د.ع</p>
+        <div class="input-group">
+            <label>أدخل مبلغ الدفعة المسددة (د.ع)</label>
+            <input type="number" id="pay-amount-input" placeholder="مثال: 50000" min="1">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button type="button" onclick="confirmPayDebtorAmount()" class="btn-modal" style="flex:1;">تأكيد وطباعة الوصل</button>
+            <button type="button" onclick="closePayDebtModal()" class="btn-modal" style="background: #64748b; flex:1;">إلغاء</button>
         </div>
     </div>
-
-    <!-- استدعاء ملف الجافاسكريبت الموحد في نهاية الصفحة -->
-    <script src="insh.js"></script>
+</div>
 </body>
 </html>
