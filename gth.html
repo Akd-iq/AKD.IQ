@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المحلات الغذائية - شبكة أكد</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="gth.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body>
+    <div class="form-card" id="main-card">
+        <div id="login-section">
+            <h2>تسجيل الدخول - الغذائية</h2>
+            <p>بوابة المحلات والأسواق الغذائية</p>
+            <form onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label>البريد الإلكتروني أو اسم المستخدم</label>
+                    <input type="text" placeholder="ادخل البريد أو اسم المستخدم" required>
+                </div>
+                <div class="input-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-submit">تسجيل الدخول</button>
+            </form>
+            <div class="form-links">
+                <button type="button" class="btn-link" onclick="toggleView('register')">إنشاء حساب جديد</button>
+                <button type="button" class="btn-link" onclick="showModal('نسيان كلمة المرور', 'يرجى التواصل مع الدعم الفني لإعادة تعيين كلمة المرور')">هل نسيت كلمة المرور؟</button>
+            </div>
+        </div>
+
+        <div id="register-section" style="display: none;">
+            <h2>إنشاء حساب إشرافي جديد</h2>
+            <p>يرجى إدخال كافة البيانات لتسجيل المركز الغذائي</p>
+            <form onsubmit="handleRegister(event)">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>اسم المحل / المركز / الشركة</label>
+                        <input type="text" required placeholder="اسم السوق أو المحل">
+                    </div>
+                    <div class="input-group">
+                        <label>اسم المالك الثلاثي واللقب</label>
+                        <input type="text" required placeholder="اسم المالك الكامل">
+                    </div>
+                    <div class="input-group">
+                        <label>البريد الإلكتروني</label>
+                        <input type="email" id="reg-email" required placeholder="example@domain.com">
+                    </div>
+                    <div class="input-group">
+                        <label>اسم المستخدم</label>
+                        <input type="text" required placeholder="username">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>كلمة المرور</label>
+                        <input type="password" required placeholder="••••••••">
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">إرسال رمز التحقق (OTP)</button>
+            </form>
+            <div class="form-links">
+                <button type="button" class="btn-link" onclick="toggleView('login')">لديك حساب بالفعل؟ تسجيل الدخول</button>
+            </div>
+        </div>
+
+        <div id="otp-section" style="display: none;">
+            <h2>تأكيد رمز التحقق</h2>
+            <p>تم إرسال الرمز إلى بريدك الإلكتروني</p>
+            <form onsubmit="verifyOTP(event)">
+                <div class="input-group">
+                    <label>أدخل رمز OTP المتكون من 6 أرقام</label>
+                    <input type="text" id="otp-input" placeholder="123456" maxlength="6" required style="text-align: center; font-size: 20px; letter-spacing: 5px;">
+                </div>
+                <button type="submit" class="btn-submit">تفعيل الحساب والتسجيل</button>
+            </form>
+        </div>
+
+        <div id="admin-section" style="display: none;">
+            <div class="admin-header">
+                <h2><i class="fa-solid fa-user-shield"></i> لوحة إدارة منصة أكد (الغذائية)</h2>
+                <p>مرحباً بالمالك (ahmd) - التحكم الشامل بالمحلات الغذائية</p>
+            </div>
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>المحل الغذائي</th>
+                            <th>المالك</th>
+                            <th>اسم المستخدم</th>
+                            <th>كلمة المرور</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات الإدارية</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-list"></tbody>
+                </table>
+            </div>
+            <button type="button" class="btn-submit btn-logout" onclick="toggleView('login')"><i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج من الإدارة</button>
+        </div>
+    </div>
+
+    <div id="custom-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-icon"><i class="fa-solid fa-bell"></i></div>
+            <h3 id="modal-title">تنبيه</h3>
+            <p id="modal-message"></p>
+            <button type="button" onclick="closeModal()" class="btn-modal">موافق</button>
+        </div>
+    </div>
+
+    <script src="gth.js"></script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المحلات الإنشائية - شبكة أكد</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="insh.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#080b18">
+</head>
+<body>
+
+    <!-- بطاقة تسجيل الدخول وإنشاء الحساب واللوحة الإدارية -->
+    <div class="form-card" id="auth-card">
+        <!-- 1. شاشة تسجيل الدخول -->
+        <div id="login-section">
+            <h2>تسجيل الدخول - الإنشائية</h2>
+            <p>بوابة المحلات والشركات الإنشائية</p>
+            <form onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label>البريد الإلكتروني أو اسم المستخدم</label>
+                    <input type="text" placeholder="ادخل البريد أو اسم المستخدم" required>
+                </div>
+                <div class="input-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-submit">تسجيل الدخول</button>
+            </form>
+            <div class="form-links">
+                <button type="button" class="btn-link" onclick="toggleView('register')">إنشاء حساب جديد</button>
+                <button type="button" class="btn-link" onclick="showModal('نسيان كلمة المرور', 'يرجى التواصل مع الدعم الفني لإعادة تعيين كلمة المرور')">هل نسيت كلمة المرور؟</button>
+            </div>
+        </div>
+
+        <!-- 2. شاشة إنشاء حساب -->
+        <div id="register-section" style="display: none;">
+            <h2>إنشاء حساب إشرافي جديد</h2>
+            <p>يرجى إدخال كافة البيانات لتسجيل المحل/الشركة</p>
+            <form onsubmit="handleRegister(event)">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>اسم المحل / المركز / الشركة</label>
+                        <input type="text" required placeholder="اسم الشركة أو المحل">
+                    </div>
+                    <div class="input-group">
+                        <label>اسم المالك الثلاثي واللقب</label>
+                        <input type="text" required placeholder="اسم المالك الكامل">
+                    </div>
+                    <div class="input-group">
+                        <label>البريد الإلكتروني</label>
+                        <input type="email" id="reg-email" required placeholder="example@domain.com">
+                    </div>
+                    <div class="input-group">
+                        <label>اسم المستخدم</label>
+                        <input type="text" required placeholder="username">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>كلمة المرور</label>
+                        <input type="password" required placeholder="••••••••">
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">إرسال رمز التحقق (OTP)</button>
+            </form>
+            <div class="form-links">
+                <button type="button" class="btn-link" onclick="toggleView('login')">لديك حساب بالفعل؟ تسجيل الدخول</button>
+            </div>
+        </div>
+
+        <!-- 3. شاشة إدخال رمز OTP -->
+        <div id="otp-section" style="display: none;">
+            <h2>تأكيد رمز التحقق</h2>
+            <p>تم إرسال الرمز إلى بريدك الإلكتروني</p>
+            <form onsubmit="verifyOTP(event)">
+                <div class="input-group">
+                    <label>أدخل رمز OTP المتكون من 6 أرقام</label>
+                    <input type="text" id="otp-input" placeholder="123456" maxlength="6" required style="text-align: center; font-size: 20px; letter-spacing: 5px;">
+                </div>
+                <button type="submit" class="btn-submit">تفعيل الحساب والتسجيل</button>
+            </form>
+        </div>
+
+        <!-- 4. لوحة الإدارة الفائقة (Super Admin) لـ ahmd -->
+        <div id="admin-section" style="display: none;">
+            <div class="admin-header">
+                <h2><i class="fa-solid fa-user-shield"></i> لوحة إدارة منصة أكد (الإنشائية)</h2>
+                <p>مرحباً بالمالك (ahmd) - التحكم الشامل بالحسابات والصلاحيات</p>
+            </div>
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>المؤسسة / المحل</th>
+                            <th>المالك</th>
+                            <th>اسم المستخدم</th>
+                            <th>كلمة المرور</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات الإدارية</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-list"></tbody>
+                </table>
+            </div>
+            <button type="button" class="btn-submit btn-logout" onclick="toggleView('login')"><i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج من الإدارة</button>
+        </div>
+    </div>
+
+    <!-- الواجهة الرئيسية للنظام بعد تسجيل الدخول -->
+    <div id="app-dashboard" style="display: none; width: 100%; max-width: 1200px;">
+        <header class="app-header">
+            <div class="store-info">
+                <h2 id="disp-store-name">شركة المشرق الإنشائية</h2>
+                <p id="disp-owner-name"><i class="fa-solid fa-user-tie"></i> صاحب المحل: أحمد النابلي</p>
+            </div>
+            <button class="menu-dots-btn" onclick="toggleSidebar()"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+        </header>
+
+        <!-- الشريط الجانبي (Sidebar) -->
+        <aside id="app-sidebar" class="app-sidebar">
+            <div class="sidebar-top">
+                <h3>منصة أكد الموحدة</h3>
+                <h4 id="sidebar-sub-title">المحلات الإنشائية</h4>
+                <button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <nav class="sidebar-menu">
+                <button onclick="switchTab('add-items')"><i class="fa-solid fa-folder-plus"></i> 1- إضافة مواد وأقسام</button>
+                <button onclick="switchTab('pos')"><i class="fa-solid fa-cash-register"></i> 2- شاشة البيع الفورية</button>
+                <button onclick="switchTab('qr')"><i class="fa-solid fa-qrcode"></i> 4- البيع عبر الباركود QR</button>
+                <button onclick="switchTab('pending')"><i class="fa-solid fa-clock-rotate-left"></i> 5- فواتير معلقة</button>
+                <button onclick="switchTab('returns')"><i class="fa-solid fa-right-left"></i> 6- إدارة المرتجعات</button>
+                <button onclick="switchTab('debts')"><i class="fa-solid fa-file-invoice-dollar"></i> 7- نظام التقسيط والديون</button>
+                <button onclick="switchTab('pay-debts')"><i class="fa-solid fa-hand-holding-dollar"></i> 8- تسديد الديون</button>
+                <button onclick="switchTab('radio')"><i class="fa-solid fa-radio"></i> 9- راديو أكد</button>
+                <button onclick="switchTab('expenses')"><i class="fa-solid fa-receipt"></i> 10- المصروفات</button>
+                <button onclick="switchTab('reports')"><i class="fa-solid fa-chart-pie"></i> 11- نهاية العمل (التقارير)</button>
+                
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
+                
+                <button onclick="switchTab('support')"><i class="fa-solid fa-headset"></i> الدعم الفني</button>
+                <button onclick="toggleTheme()"><i class="fa-solid fa-circle-half-stroke"></i> تبديل المظهر (داكن/فاتح)</button>
+                <button onclick="switchTab('settings')"><i class="fa-solid fa-user-gear"></i> إعدادات الحساب</button>
+                <button onclick="logoutSystem()" style="color: #f87171;"><i class="fa-solid fa-right-from-bracket"></i> الخروج من النظام</button>
+            </nav>
+        </aside>
+
+        <!-- منطقة عرض الواجهات المتغيرة -->
+        <main id="tab-content-area"></main>
+    </div>
+
+    <!-- نافذة إتمام البيع وإدخال اسم المحاسب بشكل أنيق -->
+    <div id="cashier-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-icon"><i class="fa-solid fa-user-check"></i></div>
+            <h3>إتمام عملية البيع</h3>
+            <p>يرجى تحديد اسم المحاسب المسلم للفاتورة لتأكيد الحفظ والطباعة:</p>
+            <div class="input-group">
+                <input type="text" id="cashier-name-modal" placeholder="اسم المحاسب (مثال: علي الحسان)">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="button" onclick="confirmCheckoutAndPrintPDF()" class="btn-modal" style="flex:1;">طباعة وحفظ PDF</button>
+
+                <button type="button" onclick="closeCashierModal()" class="btn-modal" style="background: #64748b; flex:1;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة التنبيه المخصصة -->
+    <div id="custom-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-icon"><i class="fa-solid fa-bell"></i></div>
+            <h3 id="modal-title">تنبيه</h3>
+            <p id="modal-message"></p>
+            <button type="button" onclick="closeModal()" class="btn-modal">موافق</button>
+        </div>
+    </div>
+
+    <script src="insh.js"></script>
+    <!-- نافذة تسديد الديون المخصصة الأنيقة -->
+<div id="pay-debt-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+        <div class="modal-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+        <h3>تسديد دفعة مالية</h3>
+        <p id="pay-debt-info">المبلغ المتبقي الأصلي: 0 د.ع</p>
+        <div class="input-group">
+            <label>أدخل مبلغ الدفعة المسددة (د.ع)</label>
+            <input type="number" id="pay-amount-input" placeholder="مثال: 50000" min="1">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button type="button" onclick="confirmPayDebtorAmount()" class="btn-modal" style="flex:1;">تأكيد وطباعة الوصل</button>
+            <button type="button" onclick="closePayDebtModal()" class="btn-modal" style="background: #64748b; flex:1;">إلغاء</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

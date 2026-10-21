@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Tajawal', sans-serif;
+}
+
+body {
+    background: radial-gradient(circle at center, #111936 0%, #080b18 100%);
+    color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    direction: rtl;
+    padding: 20px;
+}
+
+.main-container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 900px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #38ef7d, #00d2ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+.header p {
+    color: #94a3b8;
+    margin-bottom: 35px;
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.service-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 25px 20px;
+    text-decoration: none;
+    color: #fff;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 210, 255, 0.2);
+    border-color: #00d2ff;
+}
+
+.service-card .icon { font-size: 38px; margin-bottom: 12px; }
+.service-card h3 { font-size: 18px; margin-bottom: 6px; }
+.service-card p { font-size: 12px; color: #94a3b8; }
+.service-card.future { opacity: 0.6; cursor: default; }
+.service-card.future:hover { transform: none; border-color: rgba(255, 255, 255, 0.1); box-shadow: none; }
+
+
+
+/* ألوان خاصة ومضيئة للأيقونات الجديدة */
+.service-card.insh .icon i { color: #f59e0b; }
+.service-card.gth .icon i { color: #10b981; }
+.service-card.school .icon i { color: #8b5cf6; }
+.service-card.mah .icon i { color: #ec4899; }
+.service-card.store .icon i { color: #00d2ff; }
+.service-card.future .icon i { color: #94a3b8; }

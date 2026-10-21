@@ -1,0 +1,15 @@
+{
+    "name": "منصة شبكة أكد الموحدة",
+    "short_name": "شبكة أكد",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#080b18",
+    "theme_color": "#080b18",
+    "icons": [
+      {
+        "src": "https://cdn-icons-png.flaticon.com/512/1041/1041888.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
