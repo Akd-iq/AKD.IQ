@@ -8,49 +8,13 @@ const firebaseConfig = {
     messagingSenderId: "1079649876802",
     appId: "1:1079649876802:web:64703c2de2503a587e26db",
     measurementId: "G-W7KFZ38LL8"
-  };
-  
-  // تهيئة Firebase والوصول لقاعدة البيانات
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-  
-  // --- وظيفة إنشاء حساب جديد ورَفعه سحابياً ---
-  function registerUser(username, password) {
-    const userRef = db.ref('users/' + username);
-    
-    userRef.set({
-      username: username,
-      password: password,
-      createdAt: new Date().toISOString()
-    }).then(() => {
-      alert("تم إنشاء الحساب بنجاح وهو متاح الآن من أي جهاز!");
-    }).catch((error) => {
-      alert("حدث خطأ في الحفظ: " + error.message);
-    });
-  }
-  
-  // --- وظيفة تسجيل الدخول بفحص قاعدة البيانات السحابية ---
-  function loginUser(username, password) {
-    const userRef = db.ref('users/' + username);
-    
-    userRef.once('value', (snapshot) => {
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
-        if (userData.password === password) {
-          alert("تم تسجيل الدخول بنجاح!");
-          // تحويل المستخدم لصفحة النظام الرئيسي
-          window.location.href = "dashboard.html"; 
-        } else {
-          alert("كلمة المرور غير صحيحة!");
-        }
-      } else {
-        alert("اسم المستخدم غير موجود!");
-      }
-    });
-  }
+};
 
-
-
+// تهيئة Firebase والوصول لقاعدة البيانات السحابية
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
 
 (function() {
     if (typeof emailjs !== 'undefined') emailjs.init("uTgm68bwdFaw8TWDL");
@@ -59,9 +23,8 @@ const firebaseConfig = {
 let generatedOTP = "";
 let pendingUserData = null;
 let currentUser = null;
-const APP_KEY = "akd_insh_users";
 
-// Kuusaa naannoo (LocalStorage)
+// Kuusaa naannoo (LocalStorage) الخاصة بالبضائع والفواتير المحلية
 let storeCategories = JSON.parse(localStorage.getItem('insh_categories') || '["السباكة", "الكهربائيات"]');
 let storeProducts = JSON.parse(localStorage.getItem('insh_products') || '[]');
 let currentCart = [];
@@ -111,7 +74,7 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', curr === 'light' ? 'dark' : 'light');
 }
 
-// 1. Galmee seensaa fi bantii app adda ta'e (App Window)
+// 1. تسجيل الدخول بالسيرفر السحابي (Firebase)
 function handleLogin(e) {
     e.preventDefault();
     const inputs = e.target.querySelectorAll('input');
@@ -124,31 +87,41 @@ function handleLogin(e) {
         return;
     }
 
-    let users = JSON.parse(localStorage.getItem(APP_KEY) || "[]");
-    const user = users.find(u => (u.username === identifier || u.email === identifier) && u.password === password);
+    showModal("جاري التحقق...", "جاري الاتصال بقاعدة البيانات السحابية...");
 
-    if (user) {
-        if (user.isBlocked) {
-            showModal("حساب محظور 🚫", "تم حظر هذا الحساب من قبل مالك المنصة.");
-            return;
-        }
-        
-        currentUser = user;
-        localStorage.setItem('active_insh_user', JSON.stringify(user));
+    // فحص الحساب في السحاب بأجهزة متعددة
+    db.ref('insh_users/' + identifier).once('value').then((snapshot) => {
+        closeModal();
+        if (snapshot.exists()) {
+            const user = snapshot.val();
+            if (user.password === password) {
+                if (user.isBlocked) {
+                    showModal("حساب محظور 🚫", "تم حظر هذا الحساب من قبل مالك المنصة.");
+                    return;
+                }
+                
+                currentUser = user;
+                localStorage.setItem('active_insh_user', JSON.stringify(user));
 
-        // Yoo lallabni ammaa (window) kan idilee ta'e, foollee idilee adda ta'e (App Mode) irratti baha
-        if (!window.opener && window.name !== 'AkdAppWindow') {
-            const appWin = window.open(window.location.href, 'AkdAppWindow', 'width=1280,height=800,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
-            if (appWin) {
-                window.close(); // Lallaba durii (Tab) cufa
-                return;
+                if (!window.opener && window.name !== 'AkdAppWindow') {
+                    const appWin = window.open(window.location.href, 'AkdAppWindow', 'width=1280,height=800,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
+                    if (appWin) {
+                        window.close();
+                        return;
+                    }
+                }
+                
+                showDashboardView(user);
+            } else {
+                showModal("فشل الدخول", "كلمة المرور غير صحيحة.");
             }
+        } else {
+            showModal("فشل الدخول", "بيانات الدخول غير صحيحة، أو الحساب غير مسجل في المحلات الإنشائية.");
         }
-        
-        showDashboardView(user);
-    } else {
-        showModal("فشل الدخول", "بيانات الدخول غير صحيحة، أو الحساب غير مسجل في المحلات الإنشائية.");
-    }
+    }).catch((error) => {
+        closeModal();
+        showModal("خطأ اتصال", "فشل الاتصال بقاعدة البيانات: " + error.message);
+    });
 }
 
 function showDashboardView(user) {
@@ -165,7 +138,7 @@ function handleRegister(e) {
     const storeName = inputs[0].value;
     const ownerName = inputs[1].value;
     const email = document.getElementById('reg-email').value;
-    const username = inputs[3].value;
+    const username = inputs[3].value.trim();
     const password = inputs[4].value;
 
     generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
@@ -196,18 +169,24 @@ function handleRegister(e) {
     }
 }
 
+// 2. تفعيل رمز OTP والحفظ المباشر في السحاب (Firebase)
 function verifyOTP(e) {
     e.preventDefault();
     const enteredOTP = document.getElementById('otp-input').value.trim();
 
     if (enteredOTP === generatedOTP && pendingUserData) {
-        let users = JSON.parse(localStorage.getItem(APP_KEY) || "[]");
-        users.push(pendingUserData);
-        localStorage.setItem(APP_KEY, JSON.stringify(users));
-
-        showModal("تم التفعيل", "تم تفعيل حسابك بنجاح! يمكنك الآن تسجيل الدخول.");
-        pendingUserData = null;
-        toggleView('login');
+        showModal("جاري الحفظ...", "جاري تسجيل الحساب سحابياً في قاعدة البيانات...");
+        
+        // الحفظ المباشر في قاعدة البيانات السحابية (Firebase)
+        db.ref('insh_users/' + pendingUserData.username).set(pendingUserData).then(() => {
+            closeModal();
+            showModal("تم التفعيل السحابي", "تم إنشاء وحفظ حسابك سحابياً بنجاح! يمكنك الآن تسجيل الدخول به من أي جهاز بآمان.");
+            pendingUserData = null;
+            toggleView('login');
+        }).catch((error) => {
+            closeModal();
+            showModal("خطأ في الحفظ السحابي", error.message);
+        });
     } else {
         showModal("رمز خاطئ", "رمز التحقق غير صحيح.");
     }
@@ -389,10 +368,11 @@ function switchTab(tab) {
                 <h2>إعدادات الحساب</h2>
                 <div class="input-group"><label>اسم المحل أو الشركة</label><input type="text" id="set-store-name" value="${currentUser ? currentUser.storeName : ''}"></div>
                 <div class="input-group"><label>اسم مالك المحل</label><input type="text" id="set-owner-name" value="${currentUser ? currentUser.ownerName : ''}"></div>
-                <div class="input-group"><label>اسم المستخدم (اليوزر)</label><input type="text" id="set-username" value="${currentUser ? currentUser.username : ''}"></div>
+                <div class="input-group"><label>اسم المستخدم (اليوزر)</label><input type="text" id="set-username" value="${currentUser ? currentUser.username : ''}" readonly style="opacity:0.6;"></div>
                 <div class="input-group"><label>كلمة السر القديمة</label><input type="password" id="set-old-pass"></div>
                 <div class="input-group"><label>كلمة السر الجديدة</label><input type="password" id="set-new-pass"></div>
-                <button class="btn-submit" onclick="updateAccountSettings()">حفظ التعديلات</button>
+
+                <button class="btn-submit" onclick="updateAccountSettings()">حفظ التعديلات السحابية</button>
             </div>
         `;
     }
@@ -886,10 +866,10 @@ function printReportPDF(type, sales, expenses) {
     `);
 }
 
+// 3. تحديث بيانات الحساب سحابياً
 function updateAccountSettings() {
     const name = document.getElementById('set-store-name').value;
     const owner = document.getElementById('set-owner-name').value;
-    const user = document.getElementById('set-username').value;
     const oldPass = document.getElementById('set-old-pass').value;
     const newPass = document.getElementById('set-new-pass').value;
 
@@ -900,17 +880,20 @@ function updateAccountSettings() {
 
     currentUser.storeName = name;
     currentUser.ownerName = owner;
-    currentUser.username = user;
     if(newPass) currentUser.password = newPass;
 
-    let users = JSON.parse(localStorage.getItem(APP_KEY) || "[]");
-    const idx = users.findIndex(u => u.username === currentUser.username);
-    if(idx !== -1) users[idx] = currentUser;
-    localStorage.setItem(APP_KEY, JSON.stringify(users));
+    showModal("جاري الحفظ...", "جاري تحديث البيانات سحابياً...");
 
-    document.getElementById('disp-store-name').innerText = name;
-    document.getElementById('disp-owner-name').innerText = "صاحب المحل: " + owner;
-    showModal("تم التحديث", "تم تحديث بيانات الحساب وكلمة المرور بنجاح.");
+    db.ref('insh_users/' + currentUser.username).update(currentUser).then(() => {
+        closeModal();
+        localStorage.setItem('active_insh_user', JSON.stringify(currentUser));
+        document.getElementById('disp-store-name').innerText = name;
+        document.getElementById('disp-owner-name').innerText = "صاحب المحل: " + owner;
+        showModal("تم التحديث السحابي", "تم تحديث بيانات الحساب وكلمة المرور سحابياً بنجاح.");
+    }).catch((err) => {
+        closeModal();
+        showModal("خطأ", err.message);
+    });
 }
 
 function logoutSystem() {
