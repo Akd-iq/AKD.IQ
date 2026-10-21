@@ -24,9 +24,8 @@ let generatedOTP = "";
 let pendingUserData = null;
 let currentUser = null;
 
-// Kuusaa naannoo (LocalStorage) الخاصة بالبضائع والفواتير المحلية
 let storeCategories = JSON.parse(localStorage.getItem('insh_categories') || '["السباكة", "الكهربائيات"]');
-let storeProducts = JSON.parse(localStorage.getItem('insh_products') || '[]');
+let storeProducts = [];
 let currentCart = [];
 let pendingCarts = JSON.parse(localStorage.getItem('insh_pending_carts') || '[]');
 let salesHistory = JSON.parse(localStorage.getItem('insh_sales_history') || '[]');
@@ -74,22 +73,27 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', curr === 'light' ? 'dark' : 'light');
 }
 
-// 1. تسجيل الدخول بالسيرفر السحابي (Firebase)
+// 1. تسجيل الدخول بدون عمل Refresh للصفحة
 function handleLogin(e) {
-    e.preventDefault();
-    const inputs = e.target.querySelectorAll('input');
+    if (e && e.preventDefault) e.preventDefault();
+
+    const inputs = document.querySelectorAll('#login-section input');
     const identifier = inputs[0].value.trim();
     const password = inputs[1].value.trim();
+
+    if (!identifier || !password) {
+        showModal("تنبيه", "يرجى إدخال اسم المستخدم وكلمة المرور.");
+        return false;
+    }
 
     if (identifier === "ahmd" && password === "0") {
         showModal("أهلاً بك يا مدير المنصة", "جاري فتح لوحة التحكم لمالك المنصة...");
         toggleView('admin');
-        return;
+        return false;
     }
 
     showModal("جاري التحقق...", "جاري الاتصال بقاعدة البيانات السحابية...");
 
-    // فحص الحساب في السحاب بأجهزة متعددة
     db.ref('insh_users/' + identifier).once('value').then((snapshot) => {
         closeModal();
         if (snapshot.exists()) {
@@ -102,15 +106,6 @@ function handleLogin(e) {
                 
                 currentUser = user;
                 localStorage.setItem('active_insh_user', JSON.stringify(user));
-
-                if (!window.opener && window.name !== 'AkdAppWindow') {
-                    const appWin = window.open(window.location.href, 'AkdAppWindow', 'width=1280,height=800,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
-                    if (appWin) {
-                        window.close();
-                        return;
-                    }
-                }
-                
                 showDashboardView(user);
             } else {
                 showModal("فشل الدخول", "كلمة المرور غير صحيحة.");
@@ -122,6 +117,8 @@ function handleLogin(e) {
         closeModal();
         showModal("خطأ اتصال", "فشل الاتصال بقاعدة البيانات: " + error.message);
     });
+
+    return false;
 }
 
 function showDashboardView(user) {
@@ -129,13 +126,32 @@ function showDashboardView(user) {
     document.getElementById('app-dashboard').style.display = 'block';
     document.getElementById('disp-store-name').innerText = user.storeName;
     document.getElementById('disp-owner-name').innerText = "صاحب المحل: " + (user.ownerName || 'مالك المحل');
-    switchTab('pos');
+    
+    // جلب البضائع والمنتجات سحابياً لمزامنتها بين الأجهزة
     loadCloudProducts();
+    switchTab('pos');
+}
+
+// جلب المنتجات سحابياً عبر Firebase
+function loadCloudProducts() {
+    if (!currentUser) return;
+    db.ref('products/' + currentUser.username).on('value', (snapshot) => {
+        storeProducts = [];
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            Object.keys(data).forEach(key => {
+                storeProducts.push(data[key]);
+            });
+        }
+        if (document.getElementById('items-grid')) {
+            renderPOS();
+        }
+    });
 }
 
 function handleRegister(e) {
-    e.preventDefault();
-    const inputs = e.target.querySelectorAll('input');
+    if (e && e.preventDefault) e.preventDefault();
+    const inputs = document.querySelectorAll('#register-section input');
     const storeName = inputs[0].value;
     const ownerName = inputs[1].value;
     const email = document.getElementById('reg-email').value;
@@ -168,17 +184,16 @@ function handleRegister(e) {
         showModal("رمز التحقق", `رمز OTP التجريبي هو: ${generatedOTP}`);
         toggleView('otp');
     }
+    return false;
 }
 
-// 2. تفعيل رمز OTP والحفظ المباشر في السحاب (Firebase)
 function verifyOTP(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     const enteredOTP = document.getElementById('otp-input').value.trim();
 
     if (enteredOTP === generatedOTP && pendingUserData) {
         showModal("جاري الحفظ...", "جاري تسجيل الحساب سحابياً في قاعدة البيانات...");
         
-        // الحفظ المباشر في قاعدة البيانات السحابية (Firebase)
         db.ref('insh_users/' + pendingUserData.username).set(pendingUserData).then(() => {
             closeModal();
             showModal("تم التفعيل السحابي", "تم إنشاء وحفظ حسابك سحابياً بنجاح! يمكنك الآن تسجيل الدخول به من أي جهاز بآمان.");
@@ -191,9 +206,9 @@ function verifyOTP(e) {
     } else {
         showModal("رمز خاطئ", "رمز التحقق غير صحيح.");
     }
+    return false;
 }
 
-// Jigirraa fuulota 11
 function switchTab(tab) {
     const area = document.getElementById('tab-content-area');
     if (document.getElementById('app-sidebar').classList.contains('active')) toggleSidebar();
@@ -411,6 +426,7 @@ function renderCatOptions() {
     }
 }
 
+// إضافة المنتج وحفظه سحابياً لجميع الأجهزة
 function saveProduct() {
     const cat = document.getElementById('prod-cat-select').value;
     const name = document.getElementById('prod-name-in').value.trim();
@@ -425,15 +441,15 @@ function saveProduct() {
 
     const newProd = { cat, name, qty, price, barcode };
     
-    // حفظ المادة سحابياً تحت حساب المستخدم الحالي
-    db.ref('products/' + currentUser.username).push(newProd).then(() => {
-        showModal("تم الحفظ السحابي", تم حفظ المادة (${name}) سحابياً وستظهر في كافة الأجهزة!);
-        document.getElementById('prod-name-in').value = '';
-        document.getElementById('prod-qty-in').value = '';
-        document.getElementById('prod-price-in').value = '';
-        document.getElementById('prod-barcode-in').value = '';
-        loadCloudProducts(); // إعادة تحصيل المنتجات
-    });
+    if (currentUser) {
+        db.ref('products/' + currentUser.username).push(newProd).then(() => {
+            showModal("تم الحفظ السحابي", `تم حفظ المادة (${name}) سحابياً وستظهر فوراً في جميع الأجهزة!`);
+            document.getElementById('prod-name-in').value = '';
+            document.getElementById('prod-qty-in').value = '';
+            document.getElementById('prod-price-in').value = '';
+            document.getElementById('prod-barcode-in').value = '';
+        });
+    }
 }
 
 function renderPOS() {
@@ -870,7 +886,6 @@ function printReportPDF(type, sales, expenses) {
     `);
 }
 
-// 3. تحديث بيانات الحساب سحابياً
 function updateAccountSettings() {
     const name = document.getElementById('set-store-name').value;
     const owner = document.getElementById('set-owner-name').value;
@@ -915,20 +930,3 @@ window.addEventListener('DOMContentLoaded', function() {
         showDashboardView(currentUser);
     }
 });
-
-
-function loadCloudProducts() {
-    if (!currentUser) return;
-    db.ref('products/' + currentUser.username).on('value', (snapshot) => {
-        storeProducts = [];
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            Object.keys(data).forEach(key => {
-                storeProducts.push(data[key]);
-            });
-        }
-        if (document.getElementById('items-grid')) {
-            renderPOS();
-        }
-    });
-}
