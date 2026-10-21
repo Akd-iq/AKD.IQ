@@ -130,6 +130,7 @@ function showDashboardView(user) {
     document.getElementById('disp-store-name').innerText = user.storeName;
     document.getElementById('disp-owner-name').innerText = "صاحب المحل: " + (user.ownerName || 'مالك المحل');
     switchTab('pos');
+    loadCloudProducts();
 }
 
 function handleRegister(e) {
@@ -422,14 +423,17 @@ function saveProduct() {
         return;
     }
 
-    storeProducts.push({ cat, name, qty, price, barcode });
-    localStorage.setItem('insh_products', JSON.stringify(storeProducts));
-
-    showModal("تم الحفظ بسرعة", `تم حفظ المادة (${name}) وتبقى القائمة مفتوحة لإضافة المادة التالية.`);
-    document.getElementById('prod-name-in').value = '';
-    document.getElementById('prod-qty-in').value = '';
-    document.getElementById('prod-price-in').value = '';
-    document.getElementById('prod-barcode-in').value = '';
+    const newProd = { cat, name, qty, price, barcode };
+    
+    // حفظ المادة سحابياً تحت حساب المستخدم الحالي
+    db.ref('products/' + currentUser.username).push(newProd).then(() => {
+        showModal("تم الحفظ السحابي", تم حفظ المادة (${name}) سحابياً وستظهر في كافة الأجهزة!);
+        document.getElementById('prod-name-in').value = '';
+        document.getElementById('prod-qty-in').value = '';
+        document.getElementById('prod-price-in').value = '';
+        document.getElementById('prod-barcode-in').value = '';
+        loadCloudProducts(); // إعادة تحصيل المنتجات
+    });
 }
 
 function renderPOS() {
@@ -911,3 +915,20 @@ window.addEventListener('DOMContentLoaded', function() {
         showDashboardView(currentUser);
     }
 });
+
+
+function loadCloudProducts() {
+    if (!currentUser) return;
+    db.ref('products/' + currentUser.username).on('value', (snapshot) => {
+        storeProducts = [];
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            Object.keys(data).forEach(key => {
+                storeProducts.push(data[key]);
+            });
+        }
+        if (document.getElementById('items-grid')) {
+            renderPOS();
+        }
+    });
+}
