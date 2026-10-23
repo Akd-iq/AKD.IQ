@@ -112,15 +112,27 @@
 
     <!-- الواجهة الرئيسية للنظام بعد تسجيل الدخول -->
     <div id="app-dashboard" style="display: none; width: 100%; max-width: 1200px;">
-        <header class="app-header">
-            <div class="store-info">
-                <h2 id="disp-store-name">شركة المشرق الإنشائية</h2>
-                <p id="disp-owner-name"><i class="fa-solid fa-user-tie"></i> صاحب المحل: أحمد النابلي</p>
+        <!-- الشريط العلوي المعدل -->
+        <header class="app-header" style="display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 10px 20px;">
+            <div class="header-right" style="display: flex; align-items: center;">
+                <button class="menu-dots-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
             </div>
-            <button class="menu-dots-btn" onclick="toggleSidebar()"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            
+            <!-- حقل البحث الفوري في الوسط -->
+            <div class="header-center" style="flex: 1; max-width: 450px;">
+                <div class="search-box-header" style="position: relative; width: 100%;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                    <input type="text" id="global-search-input" onkeyup="filterProductsByGlobalSearch()" placeholder="ابحث عن اسم المادة أو الباركود هنا..." style="width: 100%; padding: 10px 38px 10px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; outline: none; font-size: 14px;">
+                </div>
+            </div>
+
+            <div class="store-info" style="text-align: left;">
+                <h2 id="disp-store-name" style="font-size: 16px; margin: 0;">شركة المشرق الإنشائية</h2>
+                <p id="disp-owner-name" style="font-size: 12px; margin: 0; color: #94a3b8;"><i class="fa-solid fa-user-tie"></i> صاحب المحل: أحمد النابلي</p>
+            </div>
         </header>
 
-        <!-- الشريط الجانبي (Sidebar) -->
+        <!-- الشريط الجانبي بدون أرقام تسلسلية -->
         <aside id="app-sidebar" class="app-sidebar">
             <div class="sidebar-top">
                 <h3>منصة أكد الموحدة</h3>
@@ -129,16 +141,17 @@
             </div>
 
             <nav class="sidebar-menu">
-                <button onclick="switchTab('add-items')"><i class="fa-solid fa-folder-plus"></i> 1- إضافة مواد وأقسام</button>
-                <button onclick="switchTab('pos')"><i class="fa-solid fa-cash-register"></i> 2- شاشة البيع الفورية</button>
-                <button onclick="switchTab('qr')"><i class="fa-solid fa-qrcode"></i> 4- البيع عبر الباركود QR</button>
-                <button onclick="switchTab('pending')"><i class="fa-solid fa-clock-rotate-left"></i> 5- فواتير معلقة</button>
-                <button onclick="switchTab('returns')"><i class="fa-solid fa-right-left"></i> 6- إدارة المرتجعات</button>
-                <button onclick="switchTab('debts')"><i class="fa-solid fa-file-invoice-dollar"></i> 7- نظام التقسيط والديون</button>
-                <button onclick="switchTab('pay-debts')"><i class="fa-solid fa-hand-holding-dollar"></i> 8- تسديد الديون</button>
-                <button onclick="switchTab('radio')"><i class="fa-solid fa-radio"></i> 9- راديو أكد</button>
-                <button onclick="switchTab('expenses')"><i class="fa-solid fa-receipt"></i> 10- المصروفات</button>
-                <button onclick="switchTab('reports')"><i class="fa-solid fa-chart-pie"></i> 11- نهاية العمل (التقارير)</button>
+                <button onclick="switchTab('pos')"><i class="fa-solid fa-cash-register"></i> شاشة البيع الفورية</button>
+                <button onclick="switchTab('add-items')"><i class="fa-solid fa-folder-plus"></i> إضافة مواد وأقسام</button>
+                <button onclick="switchTab('qr')"><i class="fa-solid fa-qrcode"></i> البيع عبر الباركود QR</button>
+                <button onclick="switchTab('shortage')" style="color: #f59e0b;"><i class="fa-solid fa-boxes-packing"></i> قسم النقص والمواد المنتهية</button>
+                <button onclick="switchTab('pending')"><i class="fa-solid fa-clock-rotate-left"></i> الفواتير المعلقة</button>
+                <button onclick="switchTab('returns')"><i class="fa-solid fa-right-left"></i> إدارة المرتجعات</button>
+                <button onclick="switchTab('debts')"><i class="fa-solid fa-file-invoice-dollar"></i> نظام التقسيط والديون</button>
+                <button onclick="switchTab('pay-debts')"><i class="fa-solid fa-hand-holding-dollar"></i> تسديد الديون</button>
+                <button onclick="switchTab('radio')"><i class="fa-solid fa-radio"></i> راديو أكد</button>
+                <button onclick="switchTab('expenses')"><i class="fa-solid fa-receipt"></i> المصروفات</button>
+                <button onclick="switchTab('reports')"><i class="fa-solid fa-chart-pie"></i> نهاية العمل والتقارير</button>
                 
                 <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
                 
@@ -153,19 +166,19 @@
         <main id="tab-content-area"></main>
     </div>
 
-    <!-- نافذة إتمام البيع وإدخال اسم المحاسب بشكل أنيق -->
+    <!-- نافذة إتمام البيع -->
     <div id="cashier-modal" class="modal-overlay" style="display: none;">
         <div class="modal-box">
             <div class="modal-icon"><i class="fa-solid fa-user-check"></i></div>
             <h3>إتمام عملية البيع</h3>
-            <p>يرجى تحديد اسم المحاسب المسلم للفاتورة لتأكيد الحفظ والطباعة:</p>
+            <p>يرجى تحديد اسم المحاسب واختيار نمط الطباعة:</p>
             <div class="input-group">
                 <input type="text" id="cashier-name-modal" placeholder="اسم المحاسب (مثال: علي الحسان)">
             </div>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button type="button" onclick="confirmCheckoutAndPrintPDF()" class="btn-modal" style="flex:1;">طباعة وحفظ PDF</button>
-
-                <button type="button" onclick="closeCashierModal()" class="btn-modal" style="background: #64748b; flex:1;">إلغاء</button>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <button type="button" onclick="confirmCheckoutAndPrintPDF('standard')" class="btn-modal" style="background:#00d2ff; color:#000;">🖨 طباعة A4 / A5 قياسية</button>
+                <button type="button" onclick="confirmCheckoutAndPrintPDF('thermal')" class="btn-modal" style="background:#f59e0b; color:#fff;">🧾 طباعة وصل حراري (80mm)</button>
+                <button type="button" onclick="closeCashierModal()" class="btn-modal" style="background: #64748b;">إلغاء</button>
             </div>
         </div>
     </div>
@@ -180,22 +193,36 @@
         </div>
     </div>
 
-    <script src="insh.js"></script>
-    <!-- نافذة تسديد الديون المخصصة الأنيقة -->
-<div id="pay-debt-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-box">
-        <div class="modal-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-        <h3>تسديد دفعة مالية</h3>
-        <p id="pay-debt-info">المبلغ المتبقي الأصلي: 0 د.ع</p>
-        <div class="input-group">
-            <label>أدخل مبلغ الدفعة المسددة (د.ع)</label>
-            <input type="number" id="pay-amount-input" placeholder="مثال: 50000" min="1">
-        </div>
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button type="button" onclick="confirmPayDebtorAmount()" class="btn-modal" style="flex:1;">تأكيد وطباعة الوصل</button>
-            <button type="button" onclick="closePayDebtModal()" class="btn-modal" style="background: #64748b; flex:1;">إلغاء</button>
+    <!-- نافذة تأكيد حذف المادة المخصصة -->
+    <div id="delete-product-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-icon" style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3>تأكيد حذف المادة</h3>
+            <p id="delete-product-message">هل أنت تأكد من رغبتك في حذف هذه المادة نهائياً من السيرفر؟</p>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="button" id="confirm-delete-prod-btn" class="btn-modal" style="background: #ef4444; flex:1;">حذف نهائي</button>
+                <button type="button" onclick="closeDeleteProductModal()" class="btn-modal" style="background: #64748b; flex:1;">إلغاء</button>
+            </div>
         </div>
     </div>
-</div>
+
+    <!-- نافذة تسديد الديون المخصصة -->
+    <div id="pay-debt-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+            <h3>تسديد دفعة مالية</h3>
+            <p id="pay-debt-info">المبلغ المتبقي الأصلي: 0 د.ع</p>
+            <div class="input-group">
+                <label>أدخل مبلغ الدفعة المسددة (د.ع)</label>
+                <input type="number" id="pay-amount-input" placeholder="مثال: 50000" min="1">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="button" onclick="confirmPayDebtorAmount()" class="btn-modal" style="flex:1;">تأكيد وطباعة الوصل</button>
+                <button type="button" onclick="closePayDebtModal()" class="btn-modal" style="background: #64748b; flex:1;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="insh.js"></script>
 </body>
 </html>

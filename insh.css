@@ -36,7 +36,6 @@ body {
     padding: 20px;
 }
 
-/* بطاقة الدخول والـ Auth */
 .form-card {
     background: var(--card-bg); 
     backdrop-filter: blur(16px);
@@ -127,7 +126,6 @@ body {
     font-size: 13px; 
 }
 
-/* النافذة المنبثقة المخصصة */
 .modal-overlay {
     position: fixed; 
     top: 0; 
@@ -191,7 +189,6 @@ body {
     text-decoration: underline;
 }
 
-/* جدول الإدارة */
 .admin-card-wide { 
     max-width: 950px !important; 
 }
@@ -268,32 +265,29 @@ body {
     color: #34d399; 
 }
 
-/* ==================== تنسيقات واجهة المحل الإنشائي والهيدر ==================== */
-/* الـ 3 نقاط في اليمين واسم المحل في اليسار */
 .app-header {
     display: flex; 
     justify-content: space-between; 
     align-items: center;
-    flex-direction: row-reverse; /* عكس الاتجاه لتصبح الـ 3 نقاط في اليمين والاسم في اليسار */
     background: var(--card-bg); 
     backdrop-filter: blur(16px);
     border: 1px solid var(--card-border); 
-    padding: 15px 25px; 
+    padding: 12px 25px; 
     border-radius: 20px; 
     margin-bottom: 20px;
 }
 
 .store-info {
-    text-align: left; /* محاذاة النص لليسار ليتناسب مع مكانه الجديد */
+    text-align: left;
 }
 
 .store-info h2 { 
-    font-size: 20px; 
+    font-size: 18px; 
     color: #fbbf24; 
 }
 
 .store-info p { 
-    font-size: 13px; 
+    font-size: 12px; 
     color: var(--subtext-color); 
     margin-top: 2px; 
 }
@@ -302,8 +296,8 @@ body {
     background: rgba(255, 255, 255, 0.1); 
     border: 1px solid var(--card-border);
     color: var(--text-color); 
-    font-size: 20px; 
-    padding: 10px 18px; 
+    font-size: 18px; 
+    padding: 10px 16px; 
     border-radius: 12px; 
     cursor: pointer;
     transition: all 0.2s ease;
@@ -314,7 +308,11 @@ body {
     color: #ffffff;
 }
 
-/* الشريط الجانبي (Sidebar) */
+.search-box-header input:focus {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
 .app-sidebar {
     position: fixed; 
     top: 0; 
@@ -378,7 +376,6 @@ body {
     color: #ffffff; 
 }
 
-/* البيع الفوري POS Grid */
 .pos-container { 
     display: grid; 
     grid-template-columns: 2fr 1fr; 
@@ -423,6 +420,7 @@ body {
     text-align: center; 
     cursor: pointer; 
     transition: all 0.2s;
+    position: relative;
 }
 
 .item-card:hover { 
@@ -430,7 +428,36 @@ body {
     transform: translateY(-3px); 
 }
 
-/* الفاتورة اليسرى */
+/* تنسيق كارت الكمية المنخفضة */
+.low-stock-card {
+    border-color: rgba(245, 158, 11, 0.6) !important;
+    background: rgba(245, 158, 11, 0.08) !important;
+}
+
+.delete-prod-btn {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: rgba(239, 68, 68, 0.8);
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.delete-prod-btn:hover {
+    background: #dc2626;
+    transform: scale(1.15);
+}
+
 .cart-panel {
     background: var(--card-bg); 
     border: 1px solid var(--card-border); 
@@ -463,5 +490,13 @@ body {
 @media (max-width: 850px) {
     .pos-container { 
         grid-template-columns: 1fr; 
+    }
+    .app-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .header-center {
+        max-width: 100% !important;
+        width: 100%;
     }
 }
