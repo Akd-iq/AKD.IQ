@@ -23,6 +23,7 @@ const db = firebase.database();
 let generatedOTP = "";
 let pendingUserData = null;
 let currentUser = null;
+let isSyncingProcess = false;
 
 let storeCategories = JSON.parse(localStorage.getItem('insh_categories') || '["السباكة", "الكهربائيات"]');
 let storeProducts = JSON.parse(localStorage.getItem('insh_cached_products') || '[]');
@@ -131,7 +132,6 @@ function handleLogin(e) {
         }
     }).catch((error) => {
         closeModal();
-        // محاولة الدخول المحلي في حال فشل الاتصال بالشبكة
         const localUser = JSON.parse(localStorage.getItem('active_insh_user'));
         if (localUser && localUser.password === password) {
             currentUser = localUser;
@@ -155,6 +155,7 @@ function showDashboardView(user) {
     switchTab('pos');
 }
 
+// دالة جلب البيانات الذكية (ترفع التعديلات المحلية أولاً ثم تجلب المحدث)
 function loadCloudProducts() {
     if (!currentUser) return;
 
@@ -164,22 +165,50 @@ function loadCloudProducts() {
         return;
     }
 
-    db.ref('products/' + currentUser.username).on('value', (snapshot) => {
-        storeProducts = [];
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            Object.keys(data).forEach(key => {
-                storeProducts.push({ key: key, ...data[key] });
-            });
-        }
-        localStorage.setItem('insh_cached_products', JSON.stringify(storeProducts));
-        if (document.getElementById('items-grid')) {
-            filterPOS(currentActiveCat);
-        }
-    }, (error) => {
-        storeProducts = JSON.parse(localStorage.getItem('insh_cached_products') || '[]');
-        if (document.getElementById('items-grid')) filterPOS(currentActiveCat);
+    if (isSyncingProcess) return;
+
+    syncLocalProductsToCloud().then(() => {
+        db.ref('products/' + currentUser.username).once('value').then((snapshot) => {
+            storeProducts = [];
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                Object.keys(data).forEach(key => {
+                    storeProducts.push({ key: key, ...data[key] });
+                });
+            }
+            localStorage.setItem('insh_cached_products', JSON.stringify(storeProducts));
+            if (document.getElementById('items-grid')) {
+                filterPOS(currentActiveCat);
+            }
+        }).catch((error) => {
+            storeProducts = JSON.parse(localStorage.getItem('insh_cached_products') || '[]');
+            if (document.getElementById('items-grid')) filterPOS(currentActiveCat);
+        });
     });
+}
+
+// دالة رفع وتزامن التعديلات المحلية وإجبار السيرفر على الأرقام الحالية
+async function syncLocalProductsToCloud() {
+    if (!currentUser || !navigator.onLine) return;
+    isSyncingProcess = true;
+    
+    const localProducts = JSON.parse(localStorage.getItem('insh_cached_products') || '[]');
+    
+    for (let p of localProducts) {
+        if (p.key && !p.key.startsWith('local_')) {
+            // تحديث كميات المواد بالسيرفر بالرقم المحلي المتبقي
+            await db.ref(`products/${currentUser.username}/${p.key}/qty`).set(p.qty);
+        } else if (p.key && p.key.startsWith('local_')) {
+            // رفع المواد الجديدة المعلقة
+            const newRef = db.ref(`products/${currentUser.username}`).push();
+            const tempKey = p.key;
+            delete p.key;
+            await newRef.set(p);
+            p.key = newRef.key;
+        }
+    }
+    localStorage.setItem('insh_cached_products', JSON.stringify(localProducts));
+    isSyncingProcess = false;
 }
 
 function handleRegister(e) {
@@ -1320,57 +1349,9 @@ function logoutSystem() {
     toggleView('login');
 }
 
-// دالة جلب البيانات مع الحفاظ على التعديلات المحلية التي تمت أوفلاين
-function loadCloudProducts() {
-    if (!currentUser) return;
-
-    // إذا كنا بدون إنترنت، نعرض البيانات المحلية فوراً
-    if (!navigator.onLine) {
-        storeProducts = JSON.parse(localStorage.getItem('insh_cached_products') || '[]');
-        if (document.getElementById('items-grid')) filterPOS(currentActiveCat);
-        return;
-    }
-
-    // عند توفر الإنترنت، نرفع التغييرات المحلية أولاً إلى Firebase ثم نجلب البيانات
-    syncLocalProductsToCloud().then(() => {
-        db.ref('products/' + currentUser.username).on('value', (snapshot) => {
-            storeProducts = [];
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                Object.keys(data).forEach(key => {
-                    storeProducts.push({ key: key, ...data[key] });
-                });
-            }
-            localStorage.setItem('insh_cached_products', JSON.stringify(storeProducts));
-            if (document.getElementById('items-grid')) {
-                filterPOS(currentActiveCat);
-            }
-        });
-    });
-}
-
-// دالة رفع وتزامن التعديلات المحلية إلى السيرفر عند عودة الاتصال
-async function syncLocalProductsToCloud() {
-    if (!currentUser || !navigator.onLine) return;
-    
-    const localProducts = JSON.parse(localStorage.getItem('insh_cached_products') || '[]');
-    
-    for (let p of localProducts) {
-        if (p.key && !p.key.startsWith('local_')) {
-            // تحديث الكميات للمواد الموجودة أساساً بالسيرفر
-            await db.ref(`products/${currentUser.username}/${p.key}/qty`).set(p.qty);
-        } else if (p.key && p.key.startsWith('local_')) {
-            // رفع المواد الجديدة التي أضيفت أثناء انقطاع الإنترنت
-            const newRef = db.ref(`products/${currentUser.username}`).push();
-            delete p.key; // حذف المعرف المحلي المؤقت
-            await newRef.set(p);
-        }
-    }
-}
-
-// المزامنة التلقائية عند عودة الإنترنت
+// المزامنة التلقائية الصارمة عند عودة الإنترنت
 window.addEventListener('online', function() {
-    showModal("عادت الشبكة 📡", "جاري رفع عمليات البيع والتعديلات التي تمت بدون إنترنت إلى السيرفر...");
+    showModal("عادت الشبكة 📡", "جاري تأكيد وتحديث أرقام المخزون سحابياً بآخر التعديلات...");
     if (currentUser) {
         loadCloudProducts();
     }
