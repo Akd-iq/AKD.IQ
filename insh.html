@@ -12,6 +12,8 @@
     <!-- استدعاء مكتبات Firebase السحابية -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <link rel="shortcut icon" href="aakkdd.ico?v=1" type="image/x-icon">
+    <link rel="icon" href="aakkdd.png?v=1" type="image/png">
 </head>
 <body>
 
@@ -151,6 +153,9 @@
                 <button onclick="switchTab('pay-debts')"><i class="fa-solid fa-hand-holding-dollar"></i> تسديد الديون</button>
                 <button onclick="switchTab('radio')"><i class="fa-solid fa-radio"></i> راديو أكد</button>
                 <button onclick="switchTab('expenses')"><i class="fa-solid fa-receipt"></i> المصروفات</button>
+                
+                <button onclick="switchTab('sales-history')"><i class="fa-solid fa-receipt"></i> الفواتير المباعة</button>
+                
                 <button onclick="switchTab('reports')"><i class="fa-solid fa-chart-pie"></i> نهاية العمل والتقارير</button>
                 
                 <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
@@ -159,6 +164,9 @@
                 <button onclick="toggleTheme()"><i class="fa-solid fa-circle-half-stroke"></i> تبديل المظهر (داكن/فاتح)</button>
                 <button onclick="switchTab('settings')"><i class="fa-solid fa-user-gear"></i> إعدادات الحساب</button>
                 <button onclick="logoutSystem()" style="color: #f87171;"><i class="fa-solid fa-right-from-bracket"></i> الخروج من النظام</button>
+            
+                <!-- الزر الجديد هنا مباشرة أسفل الخروج من النظام -->
+                <button onclick="exitToMainMenu()" style="color: #38bdf8; margin-top: 5px;"><i class="fa-solid fa-door-open"></i> الخروج من التطبيق</button>
             </nav>
         </aside>
 

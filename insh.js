@@ -155,7 +155,6 @@ function showDashboardView(user) {
     switchTab('pos');
 }
 
-// دالة جلب البيانات الذكية (ترفع التعديلات المحلية أولاً ثم تجلب المحدث)
 function loadCloudProducts() {
     if (!currentUser) return;
 
@@ -165,28 +164,21 @@ function loadCloudProducts() {
         return;
     }
 
-    if (isSyncingProcess) return;
-
-    syncLocalProductsToCloud().then(() => {
-        db.ref('products/' + currentUser.username).once('value').then((snapshot) => {
-            storeProducts = [];
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                Object.keys(data).forEach(key => {
-                    storeProducts.push({ key: key, ...data[key] });
-                });
-            }
-            localStorage.setItem('insh_cached_products', JSON.stringify(storeProducts));
-            if (document.getElementById('items-grid')) {
-                filterPOS(currentActiveCat);
-            }
-        }).catch((error) => {
-            storeProducts = JSON.parse(localStorage.getItem('insh_cached_products') || '[]');
-            if (document.getElementById('items-grid')) filterPOS(currentActiveCat);
-        });
+    // استماع مستمر للتغييرات التي تحدث من أي جهاز آخر فوراً
+    db.ref('products/' + currentUser.username).on('value', (snapshot) => {
+        storeProducts = [];
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            Object.keys(data).forEach(key => {
+                storeProducts.push({ key: key, ...data[key] });
+            });
+        }
+        localStorage.setItem('insh_cached_products', JSON.stringify(storeProducts));
+        if (document.getElementById('items-grid')) {
+            filterPOS(currentActiveCat);
+        }
     });
 }
-
 // دالة رفع وتزامن التعديلات المحلية وإجبار السيرفر على الأرقام الحالية
 async function syncLocalProductsToCloud() {
     if (!currentUser || !navigator.onLine) return;
@@ -327,7 +319,7 @@ function switchTab(tab) {
             </div>
         `;
         renderCategoryManagement();
-    } 
+    }
     else if (tab === 'pos' || tab === 'qr') {
         area.innerHTML = `
             <div class="pos-container">
@@ -470,6 +462,21 @@ function switchTab(tab) {
             </div>
         `;
     }
+    // 👇 التبويب الجديد المضاف هنا 👇
+    else if (tab === 'sales-history') {
+        area.innerHTML = `
+            ${backBtnHeader}
+            <div class="form-card" style="max-width:850px; margin:0 auto; text-align:right;">
+                <h2><i class="fa-solid fa-file-invoice-dollar" style="color:#00d2ff;"></i> سجل الفواتير المباعة</h2>
+                <div class="input-group" style="margin-top:15px;">
+                    <label>بحث برقم الفاتورة أو اسم الزبون:</label>
+                    <input type="text" id="search-sales-input" onkeyup="filterSalesHistory()" placeholder="اكتب رقم الفاتورة أو اسم الزبون...">
+                </div>
+                <div id="sales-history-list" style="margin-top:15px;"></div>
+            </div>
+        `;
+        renderSalesHistoryList(salesHistory);
+    }
     else if (tab === 'reports') {
         area.innerHTML = `
             ${backBtnHeader}
@@ -508,23 +515,6 @@ function switchTab(tab) {
                 <p style="font-size:12px; color:#f59e0b; margin-bottom:10px;">* تأكيد الهوية: يلزم كتابة كلمة المرور الحالية لتطبيق أي تغييرات على البيانات.</p>
                 <div class="input-group"><label>كلمة المرور الحالية (مطلوبة للتحقق)</label><input type="password" id="set-old-pass" placeholder="••••••••"></div>
                 <div class="input-group"><label>كلمة المرور الجديدة (اختياري)</label><input type="password" id="set-new-pass" placeholder="اتركه فارغاً إذا لا تريد تغييرها"></div>
-
-                <button class="btn-submit" onclick="updateAccountSettings()">حفظ التعديلات السحابية</button>
-            </div>
-        `;
-    }
-    else if (tab === 'support') {
-        area.innerHTML = `
-            ${backBtnHeader}
-            <div class="form-card" style="max-width:500px; margin: 0 auto;">
-                <h2>الدعم الفني والخدمات</h2>
-                <div style="display:flex; flex-direction:column; gap:10px; margin-top: 15px;">
-                    <a href="https://www.facebook.com/share/18gFhoGmVm/" target="_blank" class="btn-submit" style="text-decoration:none;">الفيسبوك</a>
-                    <a href="https://t.me/ac19y" target="_blank" class="btn-submit" style="background:#0088cc; text-decoration:none;">التليجرام (ac19y)</a>
-                    <a href="https://www.instagram.com/25r.iq?obrf=Z2Z1cXcwZzd0YXoy" target="_blank" class="btn-submit" style="background:#e1306c; text-decoration:none;">الانستجرام</a>
-                    <a href="https://wa.me/9647817711454" target="_blank" class="btn-submit" style="background:#25d366; text-decoration:none;">الواتساب (07817711454)</a>
-                    <a href="https://akd-iq.github.io/Akd-iq/" target="_blank" class="btn-submit" style="background:#8b5cf6; text-decoration:none;">موقع أكد ستور</a>
-                </div>
             </div>
         `;
     }
@@ -1364,3 +1354,188 @@ window.addEventListener('DOMContentLoaded', function() {
         showDashboardView(currentUser);
     }
 });
+
+
+// ==========================================
+// الدوال المساندة لإدارة وسجل الفواتير المباعة
+// ==========================================
+
+// 1. دالة عرض قائمة الفواتير المباعة
+function renderSalesHistoryList(list) {
+    const container = document.getElementById('sales-history-list');
+    if (!container) return;
+
+    if (!list || list.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:#94a3b8; margin:20px 0;">لا توجد فواتير مسجلة حتى الآن.</p>`;
+        return;
+    }
+
+    let html = '';
+    [...list].reverse().forEach(sale => {
+        let itemsSummary = sale.items ? sale.items.map(i => `${i.name} (${i.qty} ${i.unit || 'قطعة'})`).join('، ') : '';
+        html += `
+            <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-bottom:10px; border-right:4px solid #00d2ff;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h4 style="margin:0; color:#00d2ff;">فاتورة رقم: #${sale.id}</h4>
+                    <span style="font-size:12px; color:#94a3b8;">${sale.date}</span>
+                </div>
+                <div style="margin:8px 0; font-size:14px;">
+                    <strong>الزبون:</strong> ${sale.customer || 'زبون عام'} | <strong>المحاسب:</strong> ${sale.cashier || 'عام'}
+                </div>
+                <div style="font-size:13px; color:#cbd5e1; margin-bottom:8px;">
+                    <strong>المواد:</strong> ${itemsSummary}
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
+                    <span style="font-weight:bold; color:#10b981; font-size:15px;">الإجمالي: ${sale.total} د.ع</span>
+                    <button class="btn-submit" style="width:auto; padding:5px 12px; font-size:12px; background:#64748b;" onclick="reprintSalesInvoice(${sale.id})">🖨 إعادة طباعة / تدقيق</button>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// 2. دالة البحث والفلترة السريعة
+function filterSalesHistory() {
+    const query = document.getElementById('search-sales-input').value.trim().toLowerCase();
+    if (!query) {
+        renderSalesHistoryList(salesHistory);
+        return;
+    }
+    const filtered = salesHistory.filter(s => 
+        s.id.toString().includes(query) || 
+        (s.customer && s.customer.toLowerCase().includes(query))
+    );
+    renderSalesHistoryList(filtered);
+}
+
+// 3. دالة إعادة الطباعة والتدقيق
+function reprintSalesInvoice(saleId) {
+    const saleObj = salesHistory.find(s => s.id == saleId);
+    if (!saleObj) return;
+
+    const store = currentUser ? currentUser.storeName : "شركة المحلات الإنشائية";
+    let itemsHtml = saleObj.items.map(i => `<tr><td>${i.name}</td><td>${i.qty} ${i.unit || 'قطعة'}</td><td>${i.price} د.ع</td><td>${i.price * i.qty} د.ع</td></tr>`).join('');
+
+    let printWin = window.open('', '_blank');
+    printWin.document.write(`
+        <html dir="rtl" lang="ar">
+        <head>
+            <title>فاتورة رقم ${saleObj.id}</title>
+            <style>
+                body { font-family: sans-serif; direction: rtl; padding: 20px; background: #f8fafc; color: #1e293b; }
+                .card { background: white; border: 2px solid #0f172a; border-radius: 12px; padding: 25px; max-width: 650px; margin: 0 auto; }
+                table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2 style="text-align:center; color:#d97706;">${store}</h2>
+                <p><strong>رقم الفاتورة:</strong> ${saleObj.id} | <strong>التاريخ:</strong> ${saleObj.date}</p>
+                <p><strong>الزبون:</strong> ${saleObj.customer} | <strong>المحاسب:</strong> ${saleObj.cashier}</p>
+                <table>
+                    <thead><tr><th>المادة</th><th>الكمية</th><th>السعر</th><th>المجموع</th></tr></thead>
+                    <tbody>${itemsHtml}</tbody>
+                </table>
+                <h3 style="text-align:left;">الإجمالي: ${saleObj.total} د.ع</h3>
+            </div>
+        </body>
+        </html>
+    `);
+}
+
+function loadAdminPanel() {
+    const container = document.getElementById('admin-section');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="form-card" style="max-width:900px; margin:20px auto; text-align:right;">
+            <h2><i class="fa-solid fa-user-shield" style="color:#00d2ff;"></i> لوحة تحكم مالك المنصة (صلاحيات كاملة)</h2>
+            <p>إدارة الحسابات المسجلة والتحكم الكامل بها:</p>
+            <div id="admin-users-list" style="margin-top:20px;">جاري تحميل الحسابات...</div>
+            <button class="btn-submit" style="background:#64748b; margin-top:15px;" onclick="logoutSystem()">تسجيل الخروج</button>
+        </div>
+    `;
+
+    // جلب جميع الحسابات من قاعدة البيانات
+    db.ref('insh_users').on('value', (snapshot) => {
+        const usersListDiv = document.getElementById('admin-users-list');
+        if (!usersListDiv) return;
+
+        if (!snapshot.exists()) {
+            usersListDiv.innerHTML = `<p style="text-align:center;">لا توجد حسابات مسجلة حتى الآن.</p>`;
+            return;
+        }
+
+        const usersData = snapshot.val();
+        let html = `
+            <table class="cart-table" style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="background:rgba(255,255,255,0.1);">
+                        <th style="padding:10px;">المحل</th>
+                        <th style="padding:10px;">المالك</th>
+                        <th style="padding:10px;">اليوزر</th>
+                        <th style="padding:10px;">كلمة المرور</th>
+                        <th style="padding:10px;">الحالة</th>
+                        <th style="padding:10px;">الإجراءات والتحكم</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        Object.keys(usersData).forEach(username => {
+            const u = usersData[username];
+            const isBlocked = u.isBlocked || false;
+            html += `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05); text-align:center;">
+                    <td style="padding:10px; font-weight:bold;">${u.storeName || 'غير مسمى'}</td>
+                    <td style="padding:10px;">${u.ownerName || '-'}</td>
+                    <td style="padding:10px; color:#00d2ff;">${username}</td>
+                    <td style="padding:10px; font-family:monospace;">${u.password || '****'}</td>
+                    <td style="padding:10px;">
+                        <span style="background:${isBlocked ? '#ef4444' : '#10b981'}; padding:3px 8px; border-radius:5px; font-size:12px;">
+                            ${isBlocked ? 'محظور' : 'نشط'}
+                        </span>
+                    </td>
+                    <td style="padding:10px; display:flex; gap:5px; justify-content:center;">
+                        <button class="btn-qty" style="background:${isBlocked ? '#10b981' : '#f59e0b'}; padding:5px 10px;" onclick="toggleBlockUser('${username}', ${isBlocked})">
+                            ${isBlocked ? 'فك الحظر' : 'حظر الحساب'}
+                        </button>
+                        <button class="btn-qty" style="background:#ef4444; padding:5px 10px;" onclick="deleteUserAccount('${username}')">
+                            حذف الحساب
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table>`;
+        usersListDiv.innerHTML = html;
+    });
+}
+
+// دالة حظر / فك حظر حساب
+function toggleBlockUser(username, currentStatus) {
+    db.ref('insh_users/' + username).update({ isBlocked: !currentStatus }).then(() => {
+        showModal("تم التحديث", `تم ${!currentStatus ? 'حظر' : 'فك حظر'} الحساب (${username}) بنجاح.`);
+    });
+}
+
+// دالة حذف حساب نهائياً بواسطة المالك
+function deleteUserAccount(username) {
+    if (confirm(`هل أنت متأكد من حذف حساب (${username}) نهائياً؟ سيتم إلغاء وصوله بالكامل.`)) {
+        db.ref('insh_users/' + username).remove().then(() => {
+            db.ref('products/' + username).remove(); // تنظيف منتجاته أيضاً
+            showModal("تم الحذف", `تم حذف حساب (${username}) وكافة بياناته سحابياً.`);
+        });
+    }
+}
+
+// دالة الخروج من التطبيق والتوجيه للبوابة الرئيسية
+function exitToMainMenu() {
+    if (confirm("هل أنت متأكد من رغبتك في الخروج من التطبيق والعودة إلى الشاشة الرئيسية؟")) {
+        // العودة إلى بوابة الدخول الرئيسية لتسجيل الدخول في تطبيق آخر
+        window.location.href = "index.html";
+    }
+}
